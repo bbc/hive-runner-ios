@@ -31,9 +31,15 @@ module Hive
           end
         end
 
+        untrusted_devices = []
         # We will now have a list of devices that haven't previously been added
         devices.each do |device|
           begin
+            if !device.trusted?
+              puts "The device is untrusted"
+              untrusted_devices << device.serial
+              next
+            end
             puts "Adding new device - #{device}"
             Hive.logger.debug("Found iOS device: #{device.model}")
 
@@ -53,10 +59,29 @@ module Hive
           end
         end
 
+        if !untrusted_devices.empty?
+          untrusted_table = Terminal::Table.new headings: ['Untrusted Devices'], rows: [untrusted_devices]
+          puts untrusted_table
+        end
+
+
         hive_details = Hive.devicedb('Hive').find(Hive.id)
+
+        unless hive_details['devices'].empty?
+          rows = hive_details['devices'].map do |device|
+            [
+                "#{device['device_brand']} #{device['device_model']}",
+                device['serial'],
+                (device['device_queues'].map { |queue| queue['name']}).join("\n"),
+                device['status']
+            ]
+          end
+        end
+        table = Terminal::Table.new :headings => ['Device', 'Serial', 'Queue Name', 'Status'], :rows => rows
+
+        puts table
         if hive_details.key?('devices')
           hive_details['devices'].collect do |device|
-            Hive.logger.debug("Found iOS device #{device}")
             Object.const_get(@device_class).new(@config.merge(device))
           end
         else
