@@ -17,7 +17,7 @@ module Hive
 
         hive_details = Hive.devicedb('Hive').find(Hive.id)
 
-        hive_details['devices'].each do |device|
+        hive_details['devices'].select {|a| a['os'] == 'ios'}.each do |device|
           registered_device = devices.select { |a| a.serial == device['serial'] }
           if registered_device.empty?
             # A previously registered device isn't attached
@@ -36,7 +36,6 @@ module Hive
         devices.each do |device|
           begin
             if !device.trusted?
-              puts "The device is untrusted"
               untrusted_devices << device.serial
               next
             end
