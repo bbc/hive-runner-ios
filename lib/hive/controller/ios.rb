@@ -63,9 +63,9 @@ module Hive
           puts untrusted_table
         end
 
+        rows = []
 
         hive_details = Hive.devicedb('Hive').find(Hive.id)
-
         unless hive_details['devices'].empty?
           rows = hive_details['devices'].map do |device|
             [
