@@ -12,7 +12,6 @@ module Hive
 
         if devices.empty?
           Hive.logger.debug('No devices attached')
-          puts 'No devices attached'
         end
 
         hive_details = Hive.devicedb('Hive').find(Hive.id)
@@ -21,11 +20,11 @@ module Hive
           registered_device = devices.select { |a| a.serial == device['serial'] }
           if registered_device.empty?
             # A previously registered device isn't attached
-            puts "Removing previously registered device - #{device}"
+            Hive.logger.debug("Removing previously registered device - #{device}")
             Hive.devicedb('Device').hive_disconnect(device['id'])
           else
             # A previously registered device is attached, poll it
-            puts "Polling attached device - #{device}"
+            Hive.logger.debug("Polling attached device - #{device}")
             Hive.devicedb('Device').poll(device['id'])
             devices = devices - registered_device
           end
@@ -39,7 +38,6 @@ module Hive
               untrusted_devices << device.serial
               next
             end
-            puts "Adding new device - #{device}"
             Hive.logger.debug("Found iOS device: #{device.model}")
 
             attributes = {
@@ -60,7 +58,7 @@ module Hive
 
         if !untrusted_devices.empty?
           untrusted_table = Terminal::Table.new headings: ['Untrusted Devices'], rows: [untrusted_devices]
-          puts untrusted_table
+          Hive.logger.debug(untrusted_table)
         end
 
         rows = []
@@ -78,7 +76,7 @@ module Hive
         end
         table = Terminal::Table.new :headings => ['Device', 'Serial', 'Queue Name', 'Status'], :rows => rows
 
-        puts table
+        Hive.logger.debug(table)
         if hive_details.key?('devices')
           hive_details['devices'].collect do |device|
             Object.const_get(@device_class).new(@config.merge(device))
