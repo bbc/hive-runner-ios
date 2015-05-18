@@ -6,15 +6,11 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    device_api (1.0.0)
-    device_api-ios (0.0.1)
-      device_api (>= 1.0)
     terminal-table (1.4.5)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  device_api-ios
   hive-runner-ios!
   terminal-table
