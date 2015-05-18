@@ -5,7 +5,6 @@ PATH
 
 GEM
   remote: https://rubygems.org/
-  remote: https://gems.cloud.bbc.co.uk/
   specs:
     device_api (1.0.0)
     device_api-ios (0.0.1)
