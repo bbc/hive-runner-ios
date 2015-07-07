@@ -98,7 +98,7 @@ module Hive
             os:           'ios',
             os_version:   device.version,
             serial:       device.serial,
-            device_type:  'mobile',
+            device_type:  device.type,
             device_model: device.model.to_s.gsub(',','_'),
             device_range: device.device_class,
             device_brand: 'Apple',
@@ -110,7 +110,57 @@ module Hive
       end
 
       def populate_queues(device)
+        queues = calculate_queue_names(device)
 
+        devicedb_queues = device['device_queues'].map { |d| d['name'] }
+        # Check to see if the queues have already been registered with this device
+        missing_queues = (queues - devicedb_queues) + (devicedb_queues - queues)
+        return if missing_queues.empty?
+
+        queues << missing_queues
+
+        queue_ids = queues.flatten.uniq.map { |queue| find_or_create_queue(queue) }
+
+        values = {
+            name: device['name'],
+            hive_id: device['hive_id'],
+            feature_list: device['features'],
+            device_queue_ids: queue_ids
+        }
+
+        Hive.devicedb('Device').edit(device['id'], values)
+      end
+
+      def find_or_create_queue(name)
+        queue = Hive.devicedb('Queue').find_by_name(name)
+        return queue.first['id'] unless queue.empty?
+
+        create_queue(name, "#{name} queue created by Hive Runner")['id']
+      end
+
+      def create_queue(name, description)
+        queue_attributes = {
+            name: name,
+            description: description
+        }
+
+        Hive.devicedb('Queue').register(device_queue: queue_attributes )
+      end
+
+      def calculate_queue_names(device)
+
+        queues = [
+            device['device_model'],
+            device['os'],
+            "#{device['os']}-#{device['os_version']}",
+            "#{device['os']}-#{device['os_version']}-#{device['device_model']}",
+            device['device_type'],
+            "#{device['os']}-#{device['device_type']}"
+        ]
+
+        queues << device["features"] unless device["features"].empty?
+
+        queues.flatten
       end
     end
   end
