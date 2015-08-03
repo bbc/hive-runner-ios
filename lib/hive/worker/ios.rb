@@ -28,9 +28,13 @@ module Hive
       def alter_project(project_path)
         project = File.read(project_path)
 
-        project = replace_dev_team(project, 'PPH9EJ7977')
-        project = replace_code_sign_identity(project, 'iPhone Developer')
-        project = replace_provisioning_profile(project, '')
+        dev_team              = @options['development_team']      || ''
+        signing_identity      = @options['signing_identity']      || ''
+        provisioning_profile  = @options['provisioning_profile']  || ''
+
+        project = replace_dev_team(project, dev_team)
+        project = replace_code_sign_identity(project, signing_identity)
+        project = replace_provisioning_profile(project, provisioning_profile)
 
         File.write(project_path, project)
       end
