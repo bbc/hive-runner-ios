@@ -1,6 +1,6 @@
 require 'hive/worker'
 require 'hive/messages/ios_job'
-require 'ios_code_helper'
+require 'fruity_builder'
 
 module Hive
   class PortReserver
@@ -31,7 +31,7 @@ module Hive
         signing_identity      = @options['signing_identity']      || ''
         provisioning_profile  = @options['provisioning_profile']  || ''
 
-        helper = CodeHelper::IOS::Helper.new(project_path)
+        helper = FruityBuilder::IOS::Helper.new(project_path)
 
         helper.build.replace_bundle_id(@options['bundle_id'])
 
