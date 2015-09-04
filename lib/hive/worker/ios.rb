@@ -1,5 +1,6 @@
 require 'hive/worker'
 require 'hive/messages/ios_job'
+require 'ios_code_helper'
 
 module Hive
   class PortReserver
@@ -26,17 +27,18 @@ module Hive
       end
 
       def alter_project(project_path)
-        project = File.read(project_path)
-
         dev_team              = @options['development_team']      || ''
         signing_identity      = @options['signing_identity']      || ''
         provisioning_profile  = @options['provisioning_profile']  || ''
 
-        project = replace_dev_team(project, dev_team)
-        project = replace_code_sign_identity(project, signing_identity)
-        project = replace_provisioning_profile(project, provisioning_profile)
+        helper = CodeHelper::IOS::Helper.new(project_path)
 
-        File.write(project_path, project)
+        helper.build.replace_bundle_id(@options['bundle_id'])
+
+        helper.build.replace_dev_team(dev_team)
+        helper.build.replace_code_sign_identity(signing_identity)
+        helper.build.replace_provisioning_profile(provisioning_profile)
+        helper.build.save_project_properties
       end
 
       def replace_project_data(options = {})
@@ -51,18 +53,6 @@ module Hive
         result
       end
 
-      def replace_dev_team(project_data, new_dev_team)
-        replace_project_data(regex: '.*DevelopmentTeam = (.*);.*', data: project_data, new_value: new_dev_team )
-      end
-
-      def replace_code_sign_identity(project_data, new_identity)
-        replace_project_data(regex: '.*CODE_SIGN_IDENTITY.*= "(.*)";.*', data: project_data, new_value: new_identity)
-      end
-
-      def replace_provisioning_profile(project_data, new_profile)
-        replace_project_data(regex: '.*PROVISIONING_PROFILE = "(.*)";.*', data: project_data, new_value: new_profile)
-      end
-
       def pre_script(job, file_system, script)
         Hive.devicedb('Device').poll(@options['id'], 'busy')
 
@@ -75,8 +65,7 @@ module Hive
           app_bundle = app_info['CFBundleIdentifier']
           script.set_env 'BUNDLE_ID', app_bundle
         else
-          # Change the profiles to
-          alter_project(file_system.home_path + '/test_code/code/PickNMix/PickNMix.xcodeproj/project.pbxproj')
+          alter_project(file_system.home_path + '/test_code/code/')
         end
 
         ip_address = DeviceAPI::IOS::IPAddress.address(self.device['serial'])
