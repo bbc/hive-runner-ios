@@ -9,5 +9,6 @@ Gem::Specification.new do |s|
   s.files         = Dir['README.md', 'lib/**/*.rb']
   s.homepage      = 'https://github.com/bbc/hive-runner-ios'
   s.license       = 'MIT'
-  s.add_runtime_dependency 'device_api-ios'
+  s.add_runtime_dependency 'device_api-ios', '~> 1.0'
+  s.add_runtime_dependency 'fruity_builder', '~> 0'
 end
