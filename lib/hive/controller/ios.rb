@@ -45,8 +45,10 @@ module Hive
         display_devices
 
         if hive_details.key?('devices')
-          hive_details['devices'].collect do |device|
-            Object.const_get(@device_class).new(@config.merge(device))
+          hive_details['devices'].select {|a| a['os'] == 'ios'}.collect do |device|
+            object = Object
+            @device_class.split('::').each { |sub| object = object.const_get(sub) }
+            object.new(@config.merge(device))
           end
         else
           []
