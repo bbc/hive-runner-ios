@@ -13,7 +13,6 @@ When presented with the option of adding a module, do so and enter 'ios' as the 
 The configuration file allows you to specify the Development Team, Provisioning Certificate, Signing Identity and Bundle ID to use when testing your app, please change these as appropriate:
 
     ios:
-      max_workers: 5
       provisioning_cert: iOS Team Provisioning Profile: *
       development_team:  DEVELOPMENT_TEAM_ID
       signing_identity:  iPhone Developer
