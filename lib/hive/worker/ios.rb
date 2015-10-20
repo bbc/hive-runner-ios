@@ -10,7 +10,7 @@ module Hive
     end
 
     def reserve(queue_name)
-      self.ports[queue_name] = Hive.data_store.port.assign("#{queue_name}")
+      self.ports[queue_name] = yield
       self.ports[queue_name]
     end
   end
@@ -21,7 +21,7 @@ module Hive
       attr_accessor :device
 
       def initialize(device)
-        @ports = PortReserver.new
+        @worker_ports = PortReserver.new
         self.device = device
         super(device)
       end
@@ -74,12 +74,12 @@ module Hive
 
         # TODO: Allow the scheduler to specify the ports to use
 
-        script.set_env 'APPIUM_PORT',         @ports.reserve(queue_name: 'Appium')
-        script.set_env 'BOOTSTRAP_PORT',      @ports.reserve(queue_name: 'Bootstrap')
-        script.set_env 'CHROMEDRIVER_PORT',   @ports.reserve(queue_name: 'Chromedriver')
+        script.set_env 'APPIUM_PORT',         @worker_ports.reserve(queue_name: 'Appium') { self.allocate_port }
+        script.set_env 'BOOTSTRAP_PORT',      @worker_ports.reserve(queue_name: 'Bootstrap') { self.allocate_port }
+        script.set_env 'CHROMEDRIVER_PORT',   @worker_ports.reserve(queue_name: 'Chromedriver') { self.allocate_port }
 
         script.set_env 'APP_PATH', app_path
-
+        script.set_env 'APP_BUNDLE_PATH', app_path
         script.set_env 'DEVICE_TARGET', self.device['serial']
         script.set_env 'DEVICE_ENDPOINT', "http://#{ip_address}:37265"
 
@@ -92,22 +92,33 @@ module Hive
 
       def post_script(job, file_system, script)
         @log.info('Post script')
-        @ports.ports.each do |name, port|
-          Hive.data_store.port.release(port)
+        @worker_ports.ports.each do |name, port|
+          self.release_port(port)
         end
-        Hive.devicedb('Device').poll(@options['id'], 'idle')
+        set_device_status('idle')
       end
 
       def device_status
         details = Hive.devicedb('Device').find(@options['id'])
-        @log.info("Device details: #{details.inspect}")
-        details['status']
+        if details.key?('status')
+          @state = details['status']
+        else
+          @state
+        end
       end
 
       def set_device_status(status)
-        @log.debug("Setting status of device to '#{status}'")
-        details = Hive.devicedb('Device').poll(@options['id'], status)
-        details['status']
+        @state = status
+        begin
+          details = Hive.devicedb('Device').poll(@options['id'], status)
+          if details.key?('status')
+            @state = details['status']
+          else
+            @state
+          end
+        rescue
+          @state
+        end
       end
     end
   end
