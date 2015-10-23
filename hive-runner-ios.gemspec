@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name          = 'hive-runner-ios'
-  s.version       = '0.0.1'
-  s.date          = '2015-02-26'
+  s.version       = '1.0.0'
+  s.date          = '2015-10-23'
   s.summary       = 'Hive Runner iOS'
   s.description   = 'The iOS controller module for Hive Runner'
   s.authors       = ['Jon Wilson']
