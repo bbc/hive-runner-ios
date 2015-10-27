@@ -102,7 +102,7 @@ module Hive
             os:           'ios',
             os_version:   device.version,
             serial:       device.serial,
-            device_type:  device.type,
+            device_type:  'mobile',
             device_model: device.model.to_s.gsub(',','_'),
             device_range: device.device_class,
             device_brand: 'Apple',
