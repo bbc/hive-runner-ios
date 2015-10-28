@@ -6,39 +6,44 @@ module Hive
   class Controller
     class Ios < Controller
 
+      def devicedb_register(details)
+          registered_device = details.select { |a| a.serial == device['serial'] }
+          if registered_device.empty?
+            # A previously registered device isn't attached
+            Hive.logger.debug("Removing previously registered device - #{device}")
+            Hive.devicedb('Device').hive_disconnect(device['id'])
+            []
+          else
+            # A previously registered device is attached, poll it
+            Hive.logger.debug("#{Time.now} Polling attached device - #{device}")
+            Hive.devicedb('Device').poll(device['id'])
+            Hive.logger.debug("#{Time.now} Finished polling device - #{device}")
+
+            populate_queues(device)
+            registered_device
+          end
+        end
+      end
+
       def detect
-        Hive.logger.debug("#{Time.now} Polling hive: #{Hive.id}")
-        Hive.devicedb('Hive').poll(Hive.id)
-        Hive.logger.debug("#{Time.now} Finished polling hive: #{Hive.id}")
         devices = DeviceAPI::IOS.devices
-
         Hive.logger.debug('No devices attached') if devices.empty?
-        Hive.logger.debug("#{Time.now} Retrieving hive details")
-        hive_details = Hive.devicedb('Hive').find(Hive.id)
-        Hive.logger.debug("#{Time.now} Finished retrieving hive details")
 
-        unless hive_details.key?('devices')
-          Hive.logger.debug('Could not connect to DeviceDB at this time')
-          return []
+        hive_details = Hive.devicedb('Hive').find(Hive.id)
+
+        # Cache the last copy of the data returned from DeviceDB in case it becomes unavailable
+        if hive_details.key?('devices')
+          hive_details = @hive_details
+        else
+          @hive_details = hive_details
         end
 
-        unless hive_details['devices'].empty?
-          hive_details['devices'].select {|a| a['os'] == 'ios'}.each do |device|
-            registered_device = devices.select { |a| a.serial == device['serial'] }
-            if registered_device.empty?
-              # A previously registered device isn't attached
-              Hive.logger.debug("Removing previously registered device - #{device}")
-              Hive.devicedb('Device').hive_disconnect(device['id'])
-            else
-              # A previously registered device is attached, poll it
-              Hive.logger.debug("#{Time.now} Polling attached device - #{device}")
-              Hive.devicedb('Device').poll(device['id'])
-              Hive.logger.debug("#{Time.now} Finished polling device - #{device}")
-
-              populate_queues(device)
-              devices = devices - registered_device
-            end
+        if hive_details.is_a? Hash
+          hive_details['details'].select { |a| a['os'] == 'ios' }.each do |device|
+            devices = devices - devicedb_register(device)
           end
+        else
+          # DeviceDB is unavailable,
         end
 
         display_untrusted(devices)
