@@ -7,21 +7,20 @@ module Hive
     class Ios < Controller
 
       def devicedb_register(details)
-          registered_device = details.select { |a| a.serial == device['serial'] }
-          if registered_device.empty?
-            # A previously registered device isn't attached
-            Hive.logger.debug("Removing previously registered device - #{device}")
-            Hive.devicedb('Device').hive_disconnect(device['id'])
-            []
-          else
-            # A previously registered device is attached, poll it
-            Hive.logger.debug("#{Time.now} Polling attached device - #{device}")
-            Hive.devicedb('Device').poll(device['id'])
-            Hive.logger.debug("#{Time.now} Finished polling device - #{device}")
+        registered_device = details.select { |a| a.serial == device['serial'] }
+        if registered_device.empty?
+          # A previously registered device isn't attached
+          Hive.logger.debug("Removing previously registered device - #{device}")
+          Hive.devicedb('Device').hive_disconnect(device['id'])
+          []
+        else
+          # A previously registered device is attached, poll it
+          Hive.logger.debug("#{Time.now} Polling attached device - #{device}")
+          Hive.devicedb('Device').poll(device['id'])
+          Hive.logger.debug("#{Time.now} Finished polling device - #{device}")
 
-            populate_queues(device)
-            registered_device
-          end
+          populate_queues(device)
+          registered_device
         end
       end
 
