@@ -93,7 +93,7 @@ module Hive
       def post_script(job, file_system, script)
         @log.info('Post script')
         @worker_ports.ports.each do |name, port|
-          self.release_port(port)
+          @port_allocator.release_port(port)
         end
         set_device_status('idle')
       end
