@@ -70,20 +70,20 @@ module Hive
 
         ip_address = DeviceAPI::IOS::IPAddress.address(self.device['serial'])
 
-        script.set_env 'CHARLES_PROXY_PORT',  @ports.reserve(queue_name: 'Charles')
+        script.set_env 'CHARLES_PROXY_PORT',  @worker_ports.reserve(queue_name: 'Charles') { @port_allocator.allocate_port }
 
         # TODO: Allow the scheduler to specify the ports to use
 
-        script.set_env 'APPIUM_PORT',         @worker_ports.reserve(queue_name: 'Appium') { self.allocate_port }
-        script.set_env 'BOOTSTRAP_PORT',      @worker_ports.reserve(queue_name: 'Bootstrap') { self.allocate_port }
-        script.set_env 'CHROMEDRIVER_PORT',   @worker_ports.reserve(queue_name: 'Chromedriver') { self.allocate_port }
+        script.set_env 'APPIUM_PORT',         @worker_ports.reserve(queue_name: 'Appium') { @port_allocator.allocate_port }
+        script.set_env 'BOOTSTRAP_PORT',      @worker_ports.reserve(queue_name: 'Bootstrap') { @port_allocator.allocate_port }
+        script.set_env 'CHROMEDRIVER_PORT',   @worker_ports.reserve(queue_name: 'Chromedriver') { @port_allocator.allocate_port }
 
         script.set_env 'APP_PATH', app_path
         script.set_env 'APP_BUNDLE_PATH', app_path
         script.set_env 'DEVICE_TARGET', self.device['serial']
         script.set_env 'DEVICE_ENDPOINT', "http://#{ip_address}:37265"
 
-        "#{self.device['serial']} #{@ports.ports['Appium']} #{app_path} #{file_system.results_path}"
+        "#{self.device['serial']} #{@worker_ports.ports['Appium']} #{app_path} #{file_system.results_path}"
       end
 
       def job_message_klass
