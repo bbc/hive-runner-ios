@@ -33,6 +33,9 @@ module Hive
 
         helper = FruityBuilder::IOS::Helper.new(project_path)
 
+        # Check to see if a project has been passed in
+        return unless helper.has_project?
+
         helper.build.replace_bundle_id(@options['bundle_id'])
 
         helper.build.replace_dev_team(dev_team)
@@ -63,6 +66,7 @@ module Hive
           file_system.fetch_build(job.build, app_path)
           app_info = DeviceAPI::IOS::Plistutil.get_bundle_id_from_app(app_path)
           app_bundle = app_info['CFBundleIdentifier']
+          DeviceAPI::IOS.device(self.device['serial']).install(app_path)
           script.set_env 'BUNDLE_ID', app_bundle
         else
           alter_project(file_system.home_path + '/test_code/code/')
@@ -81,6 +85,8 @@ module Hive
         script.set_env 'APP_PATH', app_path
         script.set_env 'APP_BUNDLE_PATH', app_path
         script.set_env 'DEVICE_TARGET', self.device['serial']
+
+        # Required for Calabash testing
         script.set_env 'DEVICE_ENDPOINT', "http://#{ip_address}:37265"
 
         "#{self.device['serial']} #{@worker_ports.ports['Appium']} #{app_path} #{file_system.results_path}"
