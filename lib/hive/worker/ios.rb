@@ -59,6 +59,8 @@ module Hive
       def pre_script(job, file_system, script)
         Hive.devicedb('Device').poll(@options['id'], 'busy')
 
+        device = DeviceAPI::IOS.device(self.device['serial'])
+
         if job.build
           FileUtils.mkdir(file_system.home_path + '/build')
           app_path = file_system.home_path + '/build/' + 'build.ipa'
@@ -66,7 +68,7 @@ module Hive
           file_system.fetch_build(job.build, app_path)
           app_info = DeviceAPI::IOS::Plistutil.get_bundle_id_from_app(app_path)
           app_bundle = app_info['CFBundleIdentifier']
-          DeviceAPI::IOS.device(self.device['serial']).install(app_path)
+          device.install(app_path)
           script.set_env 'BUNDLE_ID', app_bundle
         else
           alter_project(file_system.home_path + '/test_code/code/')
@@ -87,7 +89,12 @@ module Hive
         script.set_env 'DEVICE_TARGET', self.device['serial']
 
         # Required for Calabash testing
-        script.set_env 'DEVICE_ENDPOINT', "http://#{ip_address}:37265"
+        script.set_env 'DEVICE_ENDPOINT', "http://#{ip_address}:37265" unless ip_address.nil?
+
+        # Required for Appium testing
+        script.set_env 'DEVICE_NAME', device.name
+        script.set_env 'PLATFORM_NAME', 'iOS'
+        script.set_env 'PLATFORM_VERSION', device.version
 
         "#{self.device['serial']} #{@worker_ports.ports['Appium']} #{app_path} #{file_system.results_path}"
       end
