@@ -66,9 +66,9 @@ module Hive
           app_path = file_system.home_path + '/build/' + 'build.ipa'
 
           file_system.fetch_build(job.build, app_path)
-          entitlements = DeviceAPI::IOS::Signing.enable_get_tasks(app_path)
-          DeviceAPI::IOS::Signing.sign_app(@options['signing_identity'], entitlements: entitlements, app: app_path)
-          app_info = DeviceAPI::IOS::Plistutil.get_bundle_id_from_app(app_path)
+          entitlements = FruityBuilder::Signing.enable_get_tasks(app_path)
+          FruityBuilder::Signing.sign_app(@options['signing_identity'], entitlements: entitlements, app: app_path)
+          app_info = FruityBuilder::Plistutil.get_bundle_id_from_app(app_path)
           app_bundle = app_info['CFBundleIdentifier']
           device.install(app_path)
           script.set_env 'BUNDLE_ID', app_bundle
