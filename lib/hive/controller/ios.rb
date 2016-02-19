@@ -6,97 +6,157 @@ module Hive
   class Controller
     class Ios < Controller
 
-      def detect
-        Hive.logger.debug("#{Time.now} Polling hive: #{Hive.id}")
-        Hive.devicedb('Hive').poll(Hive.id)
-        Hive.logger.debug("#{Time.now} Finished polling hive: #{Hive.id}")
+      def register_with_devicedb
         devices = DeviceAPI::IOS.devices
+        Hive.logger.debug('DDB: No devices attached') if devices.empty?
 
-        Hive.logger.debug('No devices attached') if devices.empty?
-        Hive.logger.debug("#{Time.now} Retrieving hive details")
         hive_details = Hive.devicedb('Hive').find(Hive.id)
-        Hive.logger.debug("#{Time.now} Finished retrieving hive details")
 
-        unless hive_details.key?('devices')
-          Hive.logger.debug('Could not connect to DeviceDB at this time')
-          return []
+        attached_devices = []
+
+        if hive_details.key?('devices')
+          @hive_details = hive_details
+        else
+          hive_details = @hive_details
         end
 
-        unless hive_details['devices'].empty?
-          hive_details['devices'].select {|a| a['os'] == 'ios'}.each do |device|
-            registered_device = devices.select { |a| a.serial == device['serial'] }
+        if hive_details.is_a? Hash
+          hive_details['devices'].select { |a| a['os'] == 'ios'}.each do |device|
+            registered_device = devices.select { |a| a.serial == device['serial'] && a.trusted? }
             if registered_device.empty?
               # A previously registered device isn't attached
-              Hive.logger.debug("Removing previously registered device - #{device}")
               Hive.devicedb('Device').hive_disconnect(device['id'])
             else
-              # A previously registered device is attached, poll it
-              Hive.logger.debug("#{Time.now} Polling attached device - #{device}")
               Hive.devicedb('Device').poll(device['id'])
-              Hive.logger.debug("#{Time.now} Finished polling device - #{device}")
 
-              populate_queues(device)
+              devices = devices - registered_device
+
+              begin
+                attached_devices <<
+                    self.create_device(device.merge(
+                        'os_version' => registered_device[0].version,
+                        'model' => device['device_model'],
+                        'device_range' => registered_device[0].device_class,
+                        'queues' => device['device_queues'].map{ |d| d['name'] },
+                        'queue_prefix' => @config['queue_prefix']
+                                       ))
+              rescue => e
+                Hive.logger.warn("Error with connected device: #{e.message}")
+              end
+            end
+          end
+          devices.select {|a| a.trusted? }.each do |device|
+            register_new_device(device)
+          end
+        else
+          # DeviceDB isn't available, use DeviceAPI instead
+          device_info = devices.select { |a| a.trusted? }.map do |device|
+            {
+                'id' => device.serial,
+                'serial' => device.serial,
+                'status' => 'idle',
+                'model' => device.model,
+                'brand' => 'Apple',
+                'os_version' => device.version,
+                'queue_prefix' => @config['queue_prefix']
+            }
+          end
+
+          attached_devices = device_info.collect do |physical_device|
+            self.create_device(physical_device)
+          end
+        end
+        attached_devices
+      end
+
+      def register_with_hivemind
+        devices = DeviceAPI::IOS.devices
+        Hive.logger.debug('HM: No devices attached') if devices.empty?
+
+        if not Hive.hive_mind.device_details.has_key? :error
+          connected_devices = Hive.hive_mind.device_details['connected_devices'].select{ |d| d['device_type'] == 'Mobile' && d['operating_system_name'] == 'ios' }
+
+          to_poll = []
+          attached_devices = []
+          connected_devices.each do |device|
+            Hive.logger.debug("HM: Device details: #{device.inspect}")
+            registered_device = devices.select { |a| a.serial == device['serial'] && a.trusted? }
+            if registered_device.empty?
+              Hive.logger.debug("HM: Removing previously registered device - #{device}")
+              Hive.hive_mind.disconnect(device['id'])
+            else
+              Hive.logger.debug("HM: Device #{device} to be polled")
+              begin
+                attached_devices << self.created_device(device.merge('os_version' => registered_device[0].version))
+                to_poll << device['id']
+              rescue => e
+                Hive.logger.warn("HM: Error with connected device: #{e.message}")
+              end
+
               devices = devices - registered_device
             end
           end
-        end
 
-        display_untrusted(devices)
-        display_devices
+          Hive.logger.debug("HM: Polling - #{to_poll}")
+          Hive.hive_mind.poll(*to_poll)
 
-        if hive_details.key?('devices')
-          hive_details['devices'].select {|a| a['os'] == 'ios'}.collect do |device|
-            object = Object
-            @device_class.split('::').each { |sub| object = object.const_get(sub) }
-            object.new(@config.merge(device))
+          devices.select{|a| a.trusted? }.each do |device|
+            begin
+              dev = Hive.hive_mind.register(
+                  hostname: device.model,
+                  serial: device.serial,
+                  macs: [device.wifi_mac_address],
+                  brand: 'Apple',
+                  model: device.model,
+                  device_type: 'Mobile',
+                  imei: device.imei,
+                  operating_system_name: 'ios',
+                  operating_system_version: device.version
+              )
+              Hive.hive_mind.connect(dev['id'])
+              Hive.logger.info("HM: Device registered: #{dev}")
+            rescue => e
+              Hive.logger.warn("HM: Error with connected device - #{e.message}")
+            end
           end
         else
-          []
-        end
-      end
+          Hive.logger.info('HM: No Hive Mind connection')
+          device_info = devices.select{|a| a.trusted? }.map do |device|
+            {
+                'id' => device.serial,
+                'serial' => device.serial,
+                'status' => 'idle',
+                'model' => device.model,
+                'brand' => 'Apple',
+                'os_version' => device.version,
+                'queue_prefix' => @config['queue_prefix']
+            }
+          end
 
-      def display_untrusted(devices)
-        untrusted_devices = []
-        # We will now have a list of devices that haven't previously been added
-        devices.each do |device|
-          begin
-            if !device.trusted?
-              untrusted_devices << device.serial
-              next
-            end
-
-            register_new_device(device)
+          attached_devices = device_info.collect do |physical_device|
+            self.create_device(physical_device)
           end
         end
 
-        if !untrusted_devices.empty?
-          puts Terminal::Table.new headings: ['Untrusted Devices'], rows: [untrusted_devices]
-        end
+        Hive.logger.info(attached_devices)
+        attached_devices
       end
 
-      def display_devices
-        rows = []
+      def detect
+        register_with_devicedb
+        register_with_hivemind
+      end
 
-        hive_details = Hive.devicedb('Hive').find(Hive.id)
-        if hive_details.key?('devices')
-          unless hive_details['devices'].empty?
-            rows = hive_details['devices'].map do |device|
-              [
-                  "#{device['device_brand']} #{device['device_model']}",
-                  device['serial'],
-                  (device['device_queues'].map { |queue| queue['name']}).join("\n"),
-                  device['status']
-              ]
-            end
-          end
-        end
-        table = Terminal::Table.new :headings => ['Device', 'Serial', 'Queue Name', 'Status'], :rows => rows
+      def display_untrusted
+        devices = DeviceAPI::IOS.devices
+        untrusted_devices = devices.select { |a| !a.trusted? }
 
-        puts(table)
+        return if untrusted_devices.empty?
+        puts Terminal::Table.new headings: ['Untrusted devices'], rows: [untrusted_devices]
       end
 
       def register_new_device(device)
-        Hive.logger.debug("Found iOS device: #{device.model}")
+        Hive.logger.debug("Adding new iOS device: #{device.model}")
 
         attributes = {
             os:           'ios',
@@ -135,37 +195,8 @@ module Hive
         Hive.devicedb('Device').edit(device['id'], values)
       end
 
-      def find_or_create_queue(name)
-        queue = Hive.devicedb('Queue').find_by_name(name)
-        return queue.first['id'] unless queue.empty?
 
-        create_queue(name, "#{name} queue created by Hive Runner")['id']
-      end
-
-      def create_queue(name, description)
-        queue_attributes = {
-            name: name,
-            description: description
-        }
-
-        Hive.devicedb('Queue').register(device_queue: queue_attributes )
-      end
-
-      def calculate_queue_names(device)
-
-        queues = [
-            device['device_model'],
-            device['os'],
-            "#{device['os']}-#{device['os_version']}",
-            "#{device['os']}-#{device['os_version']}-#{device['device_model']}",
-            device['device_type'],
-            "#{device['os']}-#{device['device_type']}"
-        ]
-
-        queues << device["features"] unless device["features"].empty?
-
-        queues.flatten
-      end
     end
   end
 end
+
