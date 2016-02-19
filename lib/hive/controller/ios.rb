@@ -87,7 +87,11 @@ module Hive
             else
               Hive.logger.debug("HM: Device #{device} to be polled")
               begin
-                attached_devices << self.created_device(device.merge('os_version' => registered_device[0].version))
+                attached_devices << self.create_device(device.merge(
+                                                           'os_version' => registered_device[0].version,
+                                                           'device_range' => registered_device[0].device_class
+                                                       )
+                )
                 to_poll << device['id']
               rescue => e
                 Hive.logger.warn("HM: Error with connected device: #{e.message}")
