@@ -147,8 +147,8 @@ module Hive
       end
 
       def detect
-        register_with_devicedb
         register_with_hivemind
+        register_with_devicedb
       end
 
       def display_untrusted

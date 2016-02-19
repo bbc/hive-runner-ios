@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name          = 'hive-runner-ios'
-  s.version       = '1.0.6'
+  s.version       = '1.0.7'
   s.date          = Time.now.strftime("%Y-%m-%d")
   s.summary       = 'Hive Runner iOS'
   s.description   = 'The iOS controller module for Hive Runner'
