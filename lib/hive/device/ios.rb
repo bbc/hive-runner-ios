@@ -12,6 +12,8 @@ module Hive
         @device_range = config['device_range'].downcase
         @os_version = config['os_version']
 
+        # TODO The setting of config['queues'] can be removed when DeviceDB
+        # is no longer being used
         new_queues = calculate_queue_names
         new_queues = new_queues | config['queues'] if config.has_key?('queues')
 
@@ -21,6 +23,7 @@ module Hive
         super
       end
 
+      # TODO Remove when DeviceDB is not being used any more
       def calculate_queue_names
         [
             "#{@queue_prefix}#{self.model}",
