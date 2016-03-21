@@ -21,7 +21,7 @@ module Hive
       attr_accessor :device
 
       def initialize(device)
-        @queue_prefix = device['queue_prefix'].to_s == '' ? '' : "#{device['queu    e_prefix']}-"
+        @queue_prefix = device['queue_prefix'].to_s == '' ? '' : "#{device['queue_prefix']}-"
         @model = device['model'].downcase.gsub(/\s/, '_')
         @device_range = device['device_range'].downcase
         @os_version = device['os_version']
