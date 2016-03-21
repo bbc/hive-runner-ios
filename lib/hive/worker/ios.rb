@@ -150,6 +150,13 @@ module Hive
           "#{@queue_prefix}#{@device_range}-#{@os_version}"
         ]
       end
+
+      def hive_mind_device_identifiers
+        {
+          serial: @device_id,
+          device_type: 'Mobile'
+        }
+      end
     end
   end
 end
