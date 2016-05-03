@@ -6,9 +6,9 @@ module Hive
   class Controller
     class Ios < Controller
 
-      def register
+      def detect
         devices = DeviceAPI::IOS.devices
-        Hive.logger.debug('HM: No devices attached') if devices.empty?
+        Hive.logger.debug('No devices attached') if devices.empty?
 
         if not Hive.hive_mind.device_details.has_key? :error
           connected_devices = Hive.hive_mind.device_details['connected_devices'].select{ |d| d['device_type'] == 'Mobile' && d['operating_system_name'] == 'ios' }
@@ -16,13 +16,12 @@ module Hive
           to_poll = []
           attached_devices = []
           connected_devices.each do |device|
-            Hive.logger.debug("HM: Device details: #{device.inspect}")
+            Hive.logger.debug("Device details: #{device.inspect}")
             registered_device = devices.select { |a| a.serial == device['serial'] && a.trusted? }
             if registered_device.empty?
-              Hive.logger.debug("HM: Removing previously registered device - #{device}")
-              Hive.hive_mind.disconnect(device['id'])
+              Hive.logger.debug("Removing previously registered device - #{device}")
             else
-              Hive.logger.debug("HM: Device #{device} to be polled")
+              Hive.logger.debug("Device #{device} to be polled")
               begin
                 attached_devices << self.create_device(device.merge(
                                                            'os_version' => registered_device[0].version,
@@ -31,14 +30,14 @@ module Hive
                 )
                 to_poll << device['id']
               rescue => e
-                Hive.logger.warn("HM: Error with connected device: #{e.message}")
+                Hive.logger.warn("Error with connected device: #{e.message}")
               end
 
               devices = devices - registered_device
             end
           end
 
-          Hive.logger.debug("HM: Polling - #{to_poll}")
+          Hive.logger.debug("Polling - #{to_poll}")
           Hive.hive_mind.poll(*to_poll)
 
           devices.select{|a| a.trusted? }.each do |device|
@@ -55,13 +54,13 @@ module Hive
                   operating_system_version: device.version
               )
               Hive.hive_mind.connect(dev['id'])
-              Hive.logger.info("HM: Device registered: #{dev}")
+              Hive.logger.info("Device registered: #{dev}")
             rescue => e
-              Hive.logger.warn("HM: Error with connected device - #{e.message}")
+              Hive.logger.warn("Error with connected device - #{e.message}")
             end
           end
         else
-          Hive.logger.info('HM: No Hive Mind connection')
+          Hive.logger.info('No Hive Mind connection')
           device_info = devices.select{|a| a.trusted? }.map do |device|
             {
                 'id' => device.serial,
@@ -78,17 +77,13 @@ module Hive
             begin
               self.create_device(physical_device)
             rescue => e
-              Hive.logger.info("HM: Could not created device: #{physical_device}");
+              Hive.logger.info("Could not created device: #{physical_device}");
             end
           end
         end
 
         Hive.logger.info(attached_devices)
         attached_devices
-      end
-
-      def detect
-        register
       end
 
       def display_untrusted
