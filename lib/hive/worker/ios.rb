@@ -27,7 +27,7 @@ module Hive
         @device_range = device['device_range'].downcase
         @os_version = device['os_version']
         @worker_ports = PortReserver.new
-        set_device_status('idle')
+        set_device_status('happy')
         self.device = device
         super(device)
       end
@@ -116,7 +116,7 @@ module Hive
         @worker_ports.ports.each do |name, port|
           @port_allocator.release_port(port)
         end
-        set_device_status('idle')
+        set_device_status('happy')
       end
 
       #def device_status
