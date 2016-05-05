@@ -73,7 +73,7 @@ module Hive
 
           file_system.fetch_build(job.build, app_path)
           entitlements = FruityBuilder::IOS::Signing.enable_get_tasks(app_path)
-          FruityBuilder::IOS::Signing.sign_app(@options['signing_identity'], entitlements: entitlements, app: app_path)
+          FruityBuilder::IOS::Signing.sign_app({ cert: @options['signing_identity'], entitlements: entitlements, app: app_path } )
           app_info = FruityBuilder::IOS::Plistutil.get_bundle_id_from_app(app_path)
           app_bundle = app_info['CFBundleIdentifier']
           device.install(app_path)
@@ -84,6 +84,12 @@ module Hive
 
         ip_address = DeviceAPI::IOS::IPAddress.address(self.device['serial'])
 
+        if ip_address.nil?
+          # There is a bug in the IPAddress app that stopping the IP address from being
+          # returned when it's first run, however it works the second time around.
+          # This is a *temporary* fix until that issue can be resolved.
+          ip_address = DeviceAPI::IOS::IPAddress.address(self.device['serial'])
+        end
         script.set_env 'CHARLES_PROXY_PORT',  @worker_ports.reserve(queue_name: 'Charles') { @port_allocator.allocate_port }
 
         # TODO: Allow the scheduler to specify the ports to use
