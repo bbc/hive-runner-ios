@@ -11,7 +11,12 @@ module Hive
         Hive.logger.debug('No devices attached') if devices.empty?
 
         if not Hive.hive_mind.device_details.has_key? :error
-          connected_devices = Hive.hive_mind.device_details['connected_devices'].select{ |d| d['device_type'] == 'Mobile' && d['operating_system_name'] == 'ios' }
+          begin
+            connected_devices = Hive.hive_mind.device_details['connected_devices'].select{ |d| d['device_type'] == 'Mobile' && d['operating_system_name'] == 'ios' }
+          rescue NoMethodError
+            # Failed to find connected devices
+            raise Hive::Controller::DeviceDetectionFailed
+          end
 
           to_poll = []
           attached_devices = []
