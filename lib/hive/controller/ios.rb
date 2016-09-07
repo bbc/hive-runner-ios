@@ -74,6 +74,7 @@ module Hive
                 'model' => device.model,
                 'brand' => 'Apple',
                 'os_version' => device.version,
+                'device_range' => device.device_class,
                 'queue_prefix' => @config['queue_prefix']
             }
           end
@@ -82,7 +83,7 @@ module Hive
             begin
               self.create_device(physical_device)
             rescue => e
-              Hive.logger.info("Could not created device: #{physical_device}");
+              Hive.logger.info("Could not create device: #{physical_device}");
             end
           end
         end
