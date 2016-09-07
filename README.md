@@ -1,6 +1,6 @@
 # hive-runner-ios
 
-iOS component for the hive-runner
+iOS component for the hive-runner - see the [change log](CHANGELOG.md) for release notes
 
 ## Quick start
 
