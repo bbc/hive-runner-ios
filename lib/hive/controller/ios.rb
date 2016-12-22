@@ -111,16 +111,16 @@ module Hive
         # Hive Mind isn't available, use DeviceAPI instead
         begin
           device_info = devices.select{|a| a.trusted? }.map do |device|
-              {
-                  'id' => device.serial,
-                  'serial' => device.serial,
-                  'status' => 'idle',
-                  'model' => device.model,
-                  'brand' => 'Apple',
-                  'os_version' => device.version,
-                  'device_range' => device.device_class,
-                  'queue_prefix' => @config['queue_prefix']
-              }
+             {
+                 'id' => device.serial,
+                 'serial' => device.serial,
+                 'status' => 'idle',
+                 'model' => device.model,
+                 'brand' => 'Apple',
+                 'os_version' => device.version,
+                 'device_range' => device.device_class,
+                 'queue_prefix' => @config['queue_prefix']
+             }
           end
           attached_devices = device_info.collect do |physical_device|
             self.create_device(physical_device)
