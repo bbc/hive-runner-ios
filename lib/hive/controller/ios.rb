@@ -128,6 +128,37 @@
           rescue => e
             Hive.logger.warn(e)
           end
+        end
+        Hive.logger.info(attached_devices)
+        attached_devices
+      end
+
+      def detect_without_hivemind
+        connected_devices = get_connected_devices
+        Hive.logger.debug('No devices attached') if connected_devices.empty?
+
+        Hive.logger.info('No Hive Mind connection')
+        Hive.logger.debug("Error: #{Hive.hive_mind.device_details[:error]}")
+        # Hive Mind isn't available, use DeviceAPI instead
+        begin
+          device_info = connected_devices.select{|a| a.trusted? }.map do |device|
+            {
+                'id' => device.serial,
+                'serial' => device.serial,
+                'status' => 'idle',
+                'model' => device.model,
+                'brand' => 'Apple',
+                'os_version' => device.version,
+                'device_range' => device.device_class,
+                'queue_prefix' => @config['queue_prefix']
+            }
+          end
+          attached_devices = device_info.collect do |physical_device|
+            self.create_device(physical_device)
+          end
+        rescue => e
+          Hive.logger.warn(e)
+        end
 
         Hive.logger.info(attached_devices)
         attached_devices
