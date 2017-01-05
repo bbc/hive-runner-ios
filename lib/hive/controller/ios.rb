@@ -31,35 +31,35 @@
               registered_device = []
             end
 
-           if registered_device.empty?
-             # A previously registered device isn't attached
-             Hive.logger.debug("A previously registered device has disappeared: #{device}")
-           else
-             # A previously registered device is attached, poll it
-             Hive.logger.debug("Setting #{device['name']} to be polled")
-             Hive.logger.debug("Device: #{registered_device.inspect}")
+            if registered_device.empty?
+              # A previously registered device isn't attached
+              Hive.logger.debug("A previously registered device has disappeared: #{device}")
+            else
+              # A previously registered device is attached, poll it
+              Hive.logger.debug("Setting #{device['name']} to be polled")
+              Hive.logger.debug("Device: #{registered_device.inspect}")
               begin
                 Hive.logger.debug("#{device['name']} OS version: #{registered_device[0].version}")
                 # Check OS version and update if necessary
-               if device['operating_system_version'] != registered_device[0].version
-                 Hive.logger.info("Updating OS version of #{device['name']} from #{device['operating_system_version']} to #{registered_device[0].version}")
-                 Hive.hive_mind.register(
-                   id: device['id'],
-                    operating_system_name: 'android',
-                    operating_system_version: registered_device[0].version
+                if device['operating_system_version'] != registered_device[0].version
+                  Hive.logger.info("Updating OS version of #{device['name']} from #{device['operating_system_version']} to #{registered_device[0].version}")
+                  Hive.hive_mind.register(
+                    id: device['id'],
+                     operating_system_name: 'android',
+                     operating_system_version: registered_device[0].version
                   )
                 end
                 attached_devices << self.create_device(device.merge(
-                                                               'os_version' => registered_device[0].version,
-                                                               'device_range' => registered_device[0].device_class
-                                                           )
+                                                                'os_version' => registered_device[0].version,
+                                                                'device_range' => registered_device[0].device_class
+                                                            )
                     )
                 to_poll << device['id']
               rescue DeviceAPI::DeviceNotFound => e
                  Hive.logger.warn("Device disconnected before registration (serial: #{device['serial']})")
               rescue => e
-                 Hive.logger.warn("Error with connected device: #{e.message}")
-             end
+                  Hive.logger.warn("Error with connected device: #{e.message}")
+              end
 
               connected_devices = connected_devices - registered_device
             end
@@ -125,39 +125,11 @@
             attached_devices = device_info.collect do |physical_device|
               self.create_device(physical_device)
             end
+          rescue DeviceAPI::DeviceNotFound => e
+            Hive.logger.warn("Device disconnected while fetching device_info #{e.message}")
           rescue => e
             Hive.logger.warn(e)
           end
-        end
-        Hive.logger.info(attached_devices)
-        attached_devices
-      end
-
-      def detect_without_hivemind
-        connected_devices = get_connected_devices
-        Hive.logger.debug('No devices attached') if connected_devices.empty?
-
-        Hive.logger.info('No Hive Mind connection')
-        Hive.logger.debug("Error: #{Hive.hive_mind.device_details[:error]}")
-        # Hive Mind isn't available, use DeviceAPI instead
-        begin
-          device_info = connected_devices.select{|a| a.trusted? }.map do |device|
-            {
-                'id' => device.serial,
-                'serial' => device.serial,
-                'status' => 'idle',
-                'model' => device.model,
-                'brand' => 'Apple',
-                'os_version' => device.version,
-                'device_range' => device.device_class,
-                'queue_prefix' => @config['queue_prefix']
-            }
-          end
-          attached_devices = device_info.collect do |physical_device|
-            self.create_device(physical_device)
-          end
-        rescue => e
-          Hive.logger.warn(e)
         end
 
         Hive.logger.info(attached_devices)
