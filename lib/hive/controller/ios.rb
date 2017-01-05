@@ -72,7 +72,7 @@ module Hive
         # Register new devices
         if !connected_devices.empty?
           begin
-            connected_devices.select{|a| a.trusted? } do |device|
+            connected_devices.select{|a| a.trusted? }.each do |device|
               begin
                 dev = Hive.hive_mind.register(
                     hostname: device.model,
