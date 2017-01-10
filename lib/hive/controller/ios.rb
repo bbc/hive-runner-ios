@@ -110,7 +110,7 @@ module Hive
           Hive.logger.debug("Error: #{Hive.hive_mind.device_details[:error]}")
           # Hive Mind isn't available, use DeviceAPI instead
           begin
-            device_info = devices.select{|a| a.trusted? }.map do |device|
+            device_info = connected_devices.select{|a| a.trusted? }.map do |device|
               {
                   'id' => device.serial,
                   'serial' => device.serial,
