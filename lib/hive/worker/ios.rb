@@ -76,7 +76,7 @@ module Hive
           FruityBuilder::IOS::Signing.sign_app({ cert: @options['signing_identity'], entitlements: entitlements, app: app_path } )
           app_info = FruityBuilder::IOS::Plistutil.get_bundle_id_from_app(app_path)
           app_bundle = app_info['CFBundleIdentifier']
-          device.install(app_path)
+          device.install(app_path) if job.install_build
           script.set_env 'BUNDLE_ID', app_bundle
         else
           alter_project(file_system.home_path + '/test_code/code/')
