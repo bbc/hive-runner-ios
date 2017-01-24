@@ -80,12 +80,15 @@ module Hive
           app_path = file_system.home_path + '/build/' + 'build.ipa'
 
           file_system.fetch_build(job.build, app_path)
-          entitlements = FruityBuilder::IOS::Signing.enable_get_tasks(app_path)
-          FruityBuilder::IOS::Signing.sign_app({ cert: @options['signing_identity'], entitlements: entitlements, app: app_path } )
-          app_info = FruityBuilder::IOS::Plistutil.get_bundle_id_from_app(app_path)
-          app_bundle = app_info['CFBundleIdentifier']
-          device.install(app_path) if job.install_build
-          script.set_env 'BUNDLE_ID', app_bundle
+          @log.debug("Resign: #{resign}")
+          if resign
+            entitlements = FruityBuilder::IOS::Signing.enable_get_tasks(app_path)
+            FruityBuilder::IOS::Signing.sign_app({ cert: @options['signing_identity'], entitlements: entitlements, app: app_path } )
+            app_info = FruityBuilder::IOS::Plistutil.get_bundle_id_from_app(app_path)
+            app_bundle = app_info['CFBundleIdentifier']
+            device.install(app_path) if job.install_build
+            script.set_env 'BUNDLE_ID', app_bundle
+          end
         else
           alter_project(file_system.home_path + '/test_code/code/')
         end
