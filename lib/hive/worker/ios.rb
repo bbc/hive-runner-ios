@@ -42,12 +42,20 @@ module Hive
         # Check to see if a project has been passed in
         return unless helper.has_project?
 
-        helper.build.replace_bundle_id(@options['bundle_id'])
+        @log.debug("Resign: #{job.resign}")
+        if job.resign
+          @log.debug("Resign: Changing bundle id to #{@options['bundle_id']}")
+          helper.build.replace_bundle_id(@options['bundle_id'])
 
-        helper.build.replace_dev_team(dev_team)
-        helper.build.replace_code_sign_identity(signing_identity)
-        helper.build.replace_provisioning_profile(provisioning_profile)
-        helper.build.save_project_properties
+          @log.debug("Resign: Changing dev team to #{dev_team}")
+          helper.build.replace_dev_team(dev_team)
+          @log.debug("Resign: Changing signing identity to #{signing_identity}")
+          helper.build.replace_code_sign_identity(signing_identity)
+          @log.debug("Resign: Changing provisioning profile to #{provisioning_profile}")
+          helper.build.replace_provisioning_profile(provisioning_profile)
+          helper.build.save_project_properties
+          @log.debug("Finished resigning")
+        end
       end
 
       def replace_project_data(options = {})
@@ -72,12 +80,15 @@ module Hive
           app_path = file_system.home_path + '/build/' + 'build.ipa'
 
           file_system.fetch_build(job.build, app_path)
-          entitlements = FruityBuilder::IOS::Signing.enable_get_tasks(app_path)
-          FruityBuilder::IOS::Signing.sign_app({ cert: @options['signing_identity'], entitlements: entitlements, app: app_path } )
-          app_info = FruityBuilder::IOS::Plistutil.get_bundle_id_from_app(app_path)
-          app_bundle = app_info['CFBundleIdentifier']
-          device.install(app_path)
-          script.set_env 'BUNDLE_ID', app_bundle
+          @log.debug("Resign: #{job.resign}")
+          if job.resign
+            entitlements = FruityBuilder::IOS::Signing.enable_get_tasks(app_path)
+            FruityBuilder::IOS::Signing.sign_app({ cert: @options['signing_identity'], entitlements: entitlements, app: app_path } )
+            app_info = FruityBuilder::IOS::Plistutil.get_bundle_id_from_app(app_path)
+            app_bundle = app_info['CFBundleIdentifier']
+            device.install(app_path) if job.install_build
+            script.set_env 'BUNDLE_ID', app_bundle
+          end
         else
           alter_project(file_system.home_path + '/test_code/code/')
         end
