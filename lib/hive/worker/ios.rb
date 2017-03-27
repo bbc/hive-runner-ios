@@ -152,8 +152,8 @@ module Hive
           end
         end
         (@installed_apps_after.keys - @installed_apps.keys).each do |app|
-          @log.info("Uninstalling #{app} (#{@installed_apps_after[app]['package_name']})")
-          device.uninstall(@installed_apps_after[app]['package_name'])
+          @log.info("Uninstalling #{app} (#{@installed_apps_after[app][:package_name]})")
+          device.uninstall(@installed_apps_after[app][:package_name])
         end
         set_device_status('happy')
       end
