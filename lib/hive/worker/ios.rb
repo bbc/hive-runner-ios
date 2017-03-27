@@ -144,10 +144,8 @@ module Hive
 
         device = DeviceAPI::IOS.device(self.device['serial'])
         @installed_apps_after = device.list_installed_packages
-        @installed_apps_after.each do |app|
-        end
         @log.debug("Apps installed after test:")
-        @installed_apps.each_pair do |app, details|
+        @installed_apps_after.each_pair do |app, details|
           @log.debug("  #{app}")
           details.each_pair do |k, v|
             @log.debug("    #{k}: #{v}")
