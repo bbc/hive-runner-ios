@@ -1,5 +1,40 @@
 # Change Log
 
+## [v1.1.11](https://github.com/bbc/hive-runner-ios/tree/v1.1.11) (2017-03-27)
+[Full Changelog](https://github.com/bbc/hive-runner-ios/compare/v1.1.10...v1.1.11)
+
+**Merged pull requests:**
+
+- Uninstall apps after test [\#39](https://github.com/bbc/hive-runner-ios/pull/39) ([jrmhaig](https://github.com/jrmhaig))
+- Use the 'resign' flag in jobs [\#38](https://github.com/bbc/hive-runner-ios/pull/38) ([jrmhaig](https://github.com/jrmhaig))
+
+## [v1.1.10](https://github.com/bbc/hive-runner-ios/tree/v1.1.10) (2017-01-10)
+[Full Changelog](https://github.com/bbc/hive-runner-ios/compare/v1.1.9...v1.1.10)
+
+**Merged pull requests:**
+
+- Fix variable name [\#37](https://github.com/bbc/hive-runner-ios/pull/37) ([jrmhaig](https://github.com/jrmhaig))
+
+## [v1.1.9](https://github.com/bbc/hive-runner-ios/tree/v1.1.9) (2017-01-05)
+[Full Changelog](https://github.com/bbc/hive-runner-ios/compare/v1.1.8...v1.1.9)
+
+**Merged pull requests:**
+
+- Fix - Misplaced end block [\#36](https://github.com/bbc/hive-runner-ios/pull/36) ([Asimk21](https://github.com/Asimk21))
+
+## [v1.1.8](https://github.com/bbc/hive-runner-ios/tree/v1.1.8) (2017-01-05)
+[Full Changelog](https://github.com/bbc/hive-runner-ios/compare/v1.1.7...v1.1.8)
+
+**Closed issues:**
+
+- ERROR: Could not connect to lockdownd, error code -21 [\#33](https://github.com/bbc/hive-runner-ios/issues/33)
+
+**Merged pull requests:**
+
+- Fix variable name [\#35](https://github.com/bbc/hive-runner-ios/pull/35) ([jrmhaig](https://github.com/jrmhaig))
+- Device version [\#34](https://github.com/bbc/hive-runner-ios/pull/34) ([Asimk21](https://github.com/Asimk21))
+- Added changelog [\#32](https://github.com/bbc/hive-runner-ios/pull/32) ([jonpwilson](https://github.com/jonpwilson))
+
 ## [v1.1.7](https://github.com/bbc/hive-runner-ios/tree/v1.1.7) (2016-09-07)
 [Full Changelog](https://github.com/bbc/hive-runner-ios/compare/v1.1.6...v1.1.7)
 
