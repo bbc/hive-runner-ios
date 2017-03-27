@@ -75,10 +75,11 @@ module Hive
         set_device_status('busy')
         device = DeviceAPI::IOS.device(self.device['serial'])
         @installed_apps = device.list_installed_packages
+        @log.debug("Apps installed before test:")
         @installed_apps.each_pair do |app, details|
-          @log.info("Pre-installed app: #{app}")
+          @log.debug("  #{app}")
           details.each_pair do |k, v|
-            @log.debug("  #{k}: #{v}")
+            @log.debug("    #{k}: #{v}")
           end
         end
 
@@ -143,6 +144,15 @@ module Hive
 
         device = DeviceAPI::IOS.device(self.device['serial'])
         @installed_apps_after = device.list_installed_packages
+        @installed_apps_after.each do |app|
+        end
+        @log.debug("Apps installed after test:")
+        @installed_apps.each_pair do |app, details|
+          @log.debug("  #{app}")
+          details.each_pair do |k, v|
+            @log.debug("    #{k}: #{v}")
+          end
+        end
         (@installed_apps_after.keys - @installed_apps.keys).each do |app|
           @log.info("Uninstalling #{app} (#{@installed_apps_after[app]['package_name']})")
           device.uninstall(@installed_apps_after[app]['package_name'])
