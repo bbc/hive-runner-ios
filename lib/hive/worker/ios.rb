@@ -1,6 +1,7 @@
 require 'hive/worker'
 require 'hive/messages/ios_job'
 require 'fruity_builder'
+require 'device_api/ios'
 
 module Hive
   class PortReserver
@@ -156,6 +157,12 @@ module Hive
           @device_api.uninstall(@installed_apps_after[app][:package_name])
         end
         set_device_status('happy')
+      end
+
+      # Take screenshot when there is an error
+      def after_error(job, file_system, script)
+        @log.info('Taking screenshot after error')
+        @device_api.screenshot(filename: File.expand_path('error.tiff', file_system.results_path))
       end
 
       #def device_status
