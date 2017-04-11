@@ -33,13 +33,28 @@ module Hive
             data[:last_rebooted] = {:value => Time.now}
             self.device_api.reboot
             sleep 10
+            returned = false
             60.times do |i|
               Hive.logger.debug('[iOS]') { "Wait for #{self.device_api.serial} (#{i})" }
-              break if DeviceAPI::IOS::IDevice.devices.keys.include? self.device_api.serial
+              break if (returned = DeviceAPI::IOS::IDevice.devices.keys.include? self.device_api.serial)
               sleep 5
             end
+            if returned
+              trusted = false
+              60.times do |i|
+                Hive.logger.debug('[iOS]') { "Wait for #{self.device_api.serial} to be trusted (#{i})" }
+                break if (trusted = self.device_api.trusted?)
+                sleep 5
+              end
+              if trusted
+                self.pass("Rebooted", data)
+              else
+                self.fail("Failed to trust after reboot", data)
+              end
+            else
+              self.fail("Failed to reboot", data)
+            end
             @last_boot_time = Time.now
-            self.pass("Rebooted", data)
           rescue => e
             Hive.logger.error('[iOS]') { "Caught exception #{e} while rebooting #{self.device_api.serial}" }
           end
