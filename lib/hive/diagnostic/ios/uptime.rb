@@ -28,25 +28,20 @@ module Hive
 
         def repair(result)
           data = {}
-          Hive.logger.info('[iOS]') { "Rebooting the device" }
+          Hive.logger.debug('[iOS]') { "Rebooting #{self.device_api.serial}" }
           begin
             data[:last_rebooted] = {:value => Time.now}
-            Hive.logger.info('[iOS]') { "Reboot!" }
             self.device_api.reboot
-            Hive.logger.info('[iOS]') { "Reboot started" }
             sleep 10
-            Hive.logger.info('[iOS]') { "Finished sleeping" }
             60.times do |i|
-              Hive.logger.info('[iOS]') { "Wait for device #{i}" }
-              Hive.logger.info('[iOS]') { DeviceAPI::IOS::IDevice.devices.keys.join(', ') }
+              Hive.logger.debug('[iOS]') { "Wait for #{self.device_api.serial} (#{i})" }
               break if DeviceAPI::IOS::IDevice.devices.keys.include? self.device_api.serial
               sleep 5
             end
-            sleep 60
             @last_boot_time = Time.now
             self.pass("Rebooted", data)
           rescue => e
-            Hive.logger.error('[iOS]') { "Caught exception #{e}" }
+            Hive.logger.error('[iOS]') { "Caught exception #{e} while rebooting #{self.device_api.serial}" }
           end
           diagnose(data)
         end
