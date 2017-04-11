@@ -35,16 +35,16 @@ module Hive
             sleep 10
             returned = false
             60.times do |i|
+              sleep 5
               Hive.logger.debug('[iOS]') { "Wait for #{self.device_api.serial} (#{i})" }
               break if (returned = DeviceAPI::IOS::IDevice.devices.keys.include? self.device_api.serial)
-              sleep 5
             end
             if returned
               trusted = false
               60.times do |i|
+                sleep 5
                 Hive.logger.debug('[iOS]') { "Wait for #{self.device_api.serial} to be trusted (#{i})" }
                 break if (trusted = self.device_api.trusted?)
-                sleep 5
               end
               if trusted
                 self.pass("Rebooted", data)
