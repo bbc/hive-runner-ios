@@ -39,6 +39,8 @@ module Hive
               Hive.logger.debug('[iOS]') { "Wait for #{self.device_api.serial} (#{i})" }
               break if (returned = DeviceAPI::IOS::IDevice.devices.keys.include? self.device_api.serial)
             end
+            # If 'trusted?' is tested too quickly it can break the trust
+            sleep 60
             if returned
               trusted = false
               60.times do |i|
