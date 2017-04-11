@@ -1,4 +1,6 @@
 require 'hive/diagnostic'
+require 'device_api/ios/idevice'
+
 module Hive
   class Diagnostic
     class Ios
@@ -27,20 +29,25 @@ module Hive
 
         def repair(result)
           data = {}
-          Hive.logger.info("Rebooting the device")
+          Hive.logger.info('[iOS]') { "Rebooting the device" }
           begin
             data[:last_rebooted] = {:value => Time.now}
-            self.pass("Reboot", data)
+            Hive.logger.info('[iOS]') { "Reboot!" }
             self.device_api.reboot
-            sleep 5
+            Hive.logger.info('[iOS]') { "Reboot started" }
+            sleep 10
+            Hive.logger.info('[iOS]') { "Finished sleeping" }
             60.times do |i|
-              Hive.logger.debug("Wait for device #{i}")
-              break if DeviceAPI::IOS::Devices.devices.keys.include? self.device_api.serial
+              Hive.logger.info('[iOS]') { "Wait for device #{i}" }
+              Hive.logger.info('[iOS]') { DeviceAPI::IOS::IDevice.devices.keys.join(', ') }
+              break if DeviceAPI::IOS::IDevice.devices.keys.include? self.device_api.serial
               sleep 5
             end
+            sleep 60
             @last_boot_time = Time.now
-          rescue
-            Hive.logger.error("Device not found")
+            self.pass("Rebooted", data)
+          rescue => e
+            Hive.logger.error('[iOS]') { "Caught exception #{e}" }
           end
           diagnose(data)
         end
