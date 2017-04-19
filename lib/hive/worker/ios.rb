@@ -1,6 +1,7 @@
 require 'hive/worker'
 require 'hive/messages/ios_job'
 require 'fruity_builder'
+require 'device_api/ios'
 
 module Hive
   class PortReserver
@@ -27,6 +28,8 @@ module Hive
         @device_range = device['device_range'].downcase
         @os_version = device['os_version']
         @worker_ports = PortReserver.new
+        @device_api = DeviceAPI::IOS.device(@serial)
+        device["device_api"] = @device_api
         set_device_status('happy')
         self.device = device
         super(device)
@@ -73,8 +76,7 @@ module Hive
       def pre_script(job, file_system, script)
 
         set_device_status('busy')
-        device = DeviceAPI::IOS.device(self.device['serial'])
-        @installed_apps = device.list_installed_packages
+        @installed_apps = @device_api.list_installed_packages
         @log.debug("Apps installed before test:")
         @installed_apps.each_pair do |app, details|
           @log.debug("  #{app}")
@@ -94,7 +96,7 @@ module Hive
             FruityBuilder::IOS::Signing.sign_app({ cert: @options['signing_identity'], entitlements: entitlements, app: app_path } )
             app_info = FruityBuilder::IOS::Plistutil.get_bundle_id_from_app(app_path)
             app_bundle = app_info['CFBundleIdentifier']
-            device.install(app_path) if job.install_build
+            @device_api.install(app_path) if job.install_build
             script.set_env 'BUNDLE_ID', app_bundle
           end
         else
@@ -125,9 +127,9 @@ module Hive
         script.set_env 'DEVICE_ENDPOINT', "http://#{ip_address}:37265" unless ip_address.nil?
 
         # Required for Appium testing
-        script.set_env 'DEVICE_NAME', device.name
+        script.set_env 'DEVICE_NAME', @device_api.name
         script.set_env 'PLATFORM_NAME', 'iOS'
-        script.set_env 'PLATFORM_VERSION', device.version
+        script.set_env 'PLATFORM_VERSION', @device_api.version
 
         "#{self.device['serial']} #{@worker_ports.ports['Appium']} #{app_path} #{file_system.results_path}"
       end
@@ -142,8 +144,7 @@ module Hive
           @port_allocator.release_port(port)
         end
 
-        device = DeviceAPI::IOS.device(self.device['serial'])
-        @installed_apps_after = device.list_installed_packages
+        @installed_apps_after = @device_api.list_installed_packages
         @log.debug("Apps installed after test:")
         @installed_apps_after.each_pair do |app, details|
           @log.debug("  #{app}")
@@ -153,9 +154,15 @@ module Hive
         end
         (@installed_apps_after.keys - @installed_apps.keys).each do |app|
           @log.info("Uninstalling #{app} (#{@installed_apps_after[app][:package_name]})")
-          device.uninstall(@installed_apps_after[app][:package_name])
+          @device_api.uninstall(@installed_apps_after[app][:package_name])
         end
         set_device_status('happy')
+      end
+
+      # Take screenshot when there is an error
+      def after_error(job, file_system, script)
+        @log.info('Taking screenshot after error')
+        @device_api.screenshot(filename: File.expand_path('error.tiff', file_system.results_path))
       end
 
       #def device_status
